@@ -1,6 +1,8 @@
 import { ICoinDeskProvider, IQuotation } from '../../providers/ICoinDeskProvider';
 import { IUsersRepository } from '../../repositories/IUserRepository';
-import currencies from '../../common/currencies.json';
+import * as fs from 'fs';
+import * as path from 'path';
+import { Currencies } from '../../entities/Currencies';
 
 export class GetQuotationUseCase {
     constructor(
@@ -14,7 +16,10 @@ export class GetQuotationUseCase {
             throw new Error('Token inválido');
         }
         const quot = await this.coinDesk.getQuotation();
-        const updatedQuotations = Object.entries(currencies).map((element) => {
+
+        const currencies = fs.readFileSync(path.resolve(__dirname, '../../common/currencies.json'), 'utf8');
+        const jsonCurrencies: Currencies = JSON.parse(currencies);
+        const updatedQuotations = Object.entries(jsonCurrencies).map((element) => {
             const rateFloat = parseFloat(element[1]) * quot.bpi.USD.rate_float;
             let description;
             switch (element[0]) {
@@ -33,7 +38,7 @@ export class GetQuotationUseCase {
             }
             return [element[0], {
                 code: element[0],
-                rate: rateFloat.toString(),
+                rate: new Intl.NumberFormat('en-IN').format(rateFloat),
                 description,
                 rate_float: rateFloat
             }];
